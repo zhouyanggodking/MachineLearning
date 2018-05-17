@@ -12,3 +12,7 @@ class Sigmoid:
     @staticmethod
     def activation(z):
         return 1/(1 + np.exp(-z))
+
+    @staticmethod
+    def prime(z):
+        return Sigmoid.activation(z) * (1 - Sigmoid.activation(z))
