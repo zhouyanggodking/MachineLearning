@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Network:
     def __init__(self, dimensions, activations):
         """
@@ -55,4 +56,48 @@ class Network:
 
         _, a = self._feed_forward(x)
         return a[self.n_layers]
+
+    def _update_w_b(self, index, dw, delta):
+        """
+        update weights and biases
+        :param index: (int) Number of the layer
+        :param dw: (array) Partial derivatives
+        :param delta: (array) Delta error
+        :return:
+        """
+
+        self.w[index] -= self.learning_rate * dw
+        self.b[index] -= self.learning_rate * np.mean(delta, 0)
+
+    def _back_prop(self, z, a, y_true):
+        """
+        The input dicts keys represent the layer of the net
+        a = {
+            1: x,
+            2: f(x*w1 + b1)
+            3: f(a2*w2 + b2)
+        }
+        :param z: (dict) x*w + b
+        :param a:  (dict) f(z)
+        :param y_true: (array) One hot encoded truth vector
+        :return:
+        """
+
+        # first calc for the output layer, like i = 3
+        delta = self.loss.delta(y_true, a[self.n_layers])
+        dw = np.dot(a[self.n_layers - 1].T, delta)
+
+        update_params = {
+            self.n_layers - 1: (dw, delta)
+        }
+
+        # determine partial derivative and delta for the rest of the layer
+        # each iteration requires the delta from the previous layer, propagating backward
+        for i in reversed(range(2, self.n_layers)):
+            delta = np.dot(delta, self.w[i]) * self.activations[i].prime(z[i])
+            dw = np.dot(a[i-1].T, delta)
+            update_params[i-1] = (dw, delta)
+            # update weights and biases
+            for key, value in update_params.items():
+                self._update_w_b(key, value[0], value[1])
 
